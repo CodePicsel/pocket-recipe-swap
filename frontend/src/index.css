@@ -1,6 +1,25 @@
 @import "tailwindcss";
 
 :root{
-  background-color: rgb(0, 28, 33);
+  background-color: #FFF8E1;
   color: white;
+}
+
+.card {
+  box-shadow: rgb(127, 127, 127) 5px 5px 5px;
+  /* transition: 500ms; */
+}
+
+.card-front {
+  /* transform: rotateY(180deg); */
+}
+
+.card-back {
+  transform: rotateY(180deg);
+}
+ 
+.card:hover {
+  transform: scale(110%);
+  transform: rotateY(180deg);
+  transition: 800ms;
 }
