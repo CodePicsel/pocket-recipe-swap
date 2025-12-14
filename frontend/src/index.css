@@ -1,7 +1,12 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: Unbounded;
+  src: url('./assets/Unbounded-VariableFont_wght.ttf');
+}
+
 :root{
-  background-color: #FFF8E1;
+  background-color: #FFF7ED;
   color: white;
 }
 
@@ -15,11 +20,21 @@
 }
 
 .card-back {
-  transform: rotateY(180deg);
+  transform: rotateY(180deg) translateZ(1px);
 }
  
 .card:hover {
   transform: scale(110%);
   transform: rotateY(180deg);
   transition: 800ms;
+}
+
+/* for Typewriter */
+@keyframes fast-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.animate-fast-blink {
+  animation: fast-blink 0.5s steps(1) infinite;
 }

@@ -4,10 +4,10 @@ function Card({title, rating, description, featured_image, items=['item1', 'item
 
 
   return (
-    <div className='card group flex flex-col  h-[25rem] w-[20rem] bg-black relative rounded-3xl transform-3d border-2'>
+    <div className='card group flex flex-col  h-[25rem] w-[20rem] bg-black relative rounded-3xl transform-3d border-2 perspective:1000px'>
             <img className='h-full w-full object-cover rounded-3xl z-0 opacity-[85%]' src={"https://static.spotapps.co/website_images/ab_websites/174603_website_v1/menu.jpg"}/>
             {/* <div className='absolute h-full w-full border-2 inset-0 from-white via-transparent to-transparent ' ></div> */}
-        <div className='card-front justify-center text-left align-middle border-t-2 absolute top-[15rem] p-1 w-full h-[10rem] rounded-b-3xl rounded-t-2xl rounded-t bg-amber-700 backface-hidden '>
+        <div className='card-front justify-center text-left align-middle border-t-2 absolute top-[15rem] p-1 w-full h-[10rem] rounded-b-3xl rounded-t-2xl rounded-t bg-[#C2410C] backface-hidden '>
             <div>
 
                 {/* RATING DISPLAY */}
@@ -22,9 +22,9 @@ function Card({title, rating, description, featured_image, items=['item1', 'item
                         })
                     }
                 </div>
-                    <h1 is='' className='text-[2rem] ml-3 font-extrabold line-clamp-3 overflow-hidden text-ellipsis whitespace-nowrap  '>{title.toUpperCase()}</h1>
+                    <h1 is='' className='text-[2rem]  ml-3 font-extrabold line-clamp-3 overflow-hidden text-ellipsis whitespace-nowrap  '>{title.toUpperCase()}</h1>
                 <div>
-                    <ul className='flex gap-1 ml-0.5 justify-around text-gray-100 line-clamp-2 text-[1rem] relative capitalize '>
+                    <ul className='flex gap-1 ml-0.5 justify-around text-orange-100 line-clamp-2 text-[sm] relative capitalize '>
                         <li>{items[0]}</li>
                         <li>|</li>
                         <li>{items[1]}</li>
@@ -34,7 +34,7 @@ function Card({title, rating, description, featured_image, items=['item1', 'item
                 </div>
             </div>
         </div>
-        <div className='card-back absolute bg-amber-700 h-full w-full rounded-3xl p-1 backface-hidden'>
+        <div className='card-back absolute bg-[#C2410C] h-full w-full rounded-3xl p-1 backface-hidden'>
             <div className='ml-2 text-[1.2rem] font-bold'>
                 Ingredients :
                 <ul className='flex gap-1 text-left  line-clamp-2 text-[1rem] relative capitalize'>
