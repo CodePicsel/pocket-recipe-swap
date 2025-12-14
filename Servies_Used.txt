@@ -1,0 +1,6 @@
+react
+react-router-dom
+express
+node
+tailwind css
+
