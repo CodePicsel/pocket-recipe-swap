@@ -29,7 +29,7 @@ body{
 
 .card {
   box-shadow: rgb(127, 127, 127) 5px 5px 5px;
-  /* transition: 500ms; */
+  transition: 500ms;
 }
 
 .card-front {
@@ -40,12 +40,12 @@ body{
   transform: rotateY(180deg) translateZ(1px);
 }
 
-.card:hover {
+/* .card:hover {
   transform: scale(110%);
   transform: rotateY(180deg);
   transition: 800ms;
   transition-delay: 200ms;
-}
+} */
 
 /* for Typewriter */
 @keyframes fast-blink {
