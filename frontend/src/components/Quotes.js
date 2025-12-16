@@ -1,0 +1,56 @@
+export const quotes = [
+
+    // Sweet snack
+    'Sweeten up your day',
+    'Indulge your sweet tooth',
+    "A little sweetness goes a long way",
+    'Life is sweeter with dessert',
+    'Sweet dreams are made of these',
+    'Sugar rush',
+    "Treat yourself",
+    'Sweet escape',
+    'Dessert first, please',
+    'Sweet tooth satisfactio',
+
+    // Random quotes
+    "Snack time just got tastier",
+    "Crunch into happiness",
+    "Small bites, big smiles",
+    "Because every break deserves a snack",
+    "Quick snacks for busy moments",
+    "Fuel your day, one snack at a time",
+    "Midday cravings, solved",
+    "Fresh snacks, fast delivery",
+    "Turn breaks into treat time",
+    "Perfect bites for every mood",
+    "Snack smart, snack happy",
+    "When hunger strikes, we deliver",
+    "Little munchies, big flavor",
+    "Your favorite snacks, on demand",
+    "Bite-sized joy, anytime",
+    "From crunch to munch in minutes",
+    "Satisfy cravings without the wait",
+    "Good vibes start with good snacks",
+      
+    // Fun ones
+    "I’m all about that snack life",
+    "Snacking: it’s what I do best",
+    "I’m not hungry, I’m just snacksy",
+    "I’m on a strict snack diet",
+    "Donut worry, be happy",
+    "Pizza my heart",
+    "Taco ’bout a good time",
+    "Fries before guys.",
+    "I’m not addicted to snacks, I’m just committed",
+    "I’m not short, I’m snack-sized",
+    "I’m not lazy, I’m on a snack break.",
+    "My love for snacks is stronger than my self-control",
+    "I don’t crave snacks. I think about them.",
+    "Chips don’t judge me. People do",
+    "Chocolate understands me",
+    "Ice cream is cheaper than therapy",
+    "Popcorn is proof that happiness exists",
+    "Candy is my personality",
+    "Nuts about snacks—literally"
+]
+

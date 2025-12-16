@@ -1,25 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { quotes } from "./Quotes";
 
-const texts = [
- "Snack time just got tastier",
-  "Crunch into happiness",
-  "Small bites, big smiles",
-  "Because every break deserves a snack",
-  "Quick snacks for busy moments",
-  "Fuel your day, one snack at a time",
-  "Midday cravings, solved",
-  "Fresh snacks, fast delivery",
-  "Turn breaks into treat time",
-  "Perfect bites for every mood",
-  "Snack smart, snack happy",
-  "When hunger strikes, we deliver",
-  "Little munchies, big flavor",
-  "Your favorite snacks, on demand",
-  "Bite-sized joy, anytime",
-  "From crunch to munch in minutes",
-  "Good vibes start with good snacks",
-  "Satisfy cravings without the wait"
-];
+const texts = quotes
 
 export default function Typewriter() {
   const [displayText, setDisplayText] = useState("");

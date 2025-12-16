@@ -5,9 +5,26 @@
   src: url('./assets/Unbounded-VariableFont_wght.ttf');
 }
 
+@font-face {
+  font-family: poppins-sb;
+  src: url('./assets/Poppins-SemiBold.ttf');
+}
+
+@font-face {
+  font-family: poppins-light;
+  src: url('./assets/Poppins-Light.ttf');
+}
+
 :root{
-  background-color: #FFF7ED;
+  /* background-color: #FFF7ED; */
   color: white;
+}
+body{
+    background-color: #FFF7ED;
+    /* background: #082f45; */
+    /* background: linear-gradient(0deg, rgba(8, 47, 69, 1) 0%, rgba(224, 255, 255, 1) 100%); */
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 .card {
@@ -22,11 +39,12 @@
 .card-back {
   transform: rotateY(180deg) translateZ(1px);
 }
- 
+
 .card:hover {
   transform: scale(110%);
   transform: rotateY(180deg);
   transition: 800ms;
+  transition-delay: 200ms;
 }
 
 /* for Typewriter */

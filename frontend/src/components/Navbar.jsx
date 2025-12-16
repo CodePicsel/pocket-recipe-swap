@@ -16,7 +16,11 @@ export default function Navbar() {
       </NavLink>
 
       {/* RIGHT - NAV LINKS */}
-      <div className="flex items-center gap-8 text-lg">
+      <div className="flex items-center gap-8 text-lg font-[poppins-light]">
+
+        <NavLink to="/" className={linkClass}>
+          Home
+        </NavLink>
 
         <NavLink to="/surprise-me" className={linkClass}>
           Surprise

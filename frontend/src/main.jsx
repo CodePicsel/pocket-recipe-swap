@@ -8,12 +8,17 @@ import "./index.css";
 import AiChat from "./pages/Ai";
 import Search from "./pages/Search";
 import SurpriseMe from "./pages/SurpriseMe";
+import Home from "./pages/Home";
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <App />,
     children: [
+      {
+        path: '/',
+        element: <Home />
+      },
       {
         path: '/surprise-me',
         element: <SurpriseMe />

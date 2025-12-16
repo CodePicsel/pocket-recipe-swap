@@ -8,35 +8,12 @@ import Navbar from './components/Navbar'
 function App() {
 
   return (
-    <>
+    <div className='w-full min-h-screen'>
       <Navbar />
-      <div className=' flex justify-center m-4'>
-        <Typewriter />
+      <div className='flex justify-center m-5'>
+        <Outlet />
       </div>
-      <Outlet />
-    <div className='grid grid-cols-4 place-self-center gap-x-10  gap-y-10'>
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
-      <Card rating={2} title={'tour'}  />
     </div>
-    </>
   )
 }
 
