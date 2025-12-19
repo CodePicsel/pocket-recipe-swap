@@ -60,7 +60,7 @@ export default function Typewriter() {
 
   return (
     // <div className="text-3xl font-extrabold capitalize text-white bg-blue-600    rounded-2xl flex  p-4">
-    <div className="text-3xl font-[Unbounded] font-extrabold capitalize text-blue-600  rounded-2xl flex  p-4">
+    <div className="typewriter text-3xl font-[Unbounded] font-extrabold capitalize text-blue-600  rounded-2xl flex  p-4">
       <span>{displayText}</span>
       <span className="ml-1 animate-fast-blink">|</span>
     </div>

@@ -28,12 +28,12 @@ body{
 }
 
 .card {
-  box-shadow: rgb(127, 127, 127) 5px 5px 5px;
+  box-shadow: rgb(127, 127, 127) 5px 5px 7px;
   transition: 500ms;
 }
 
 .card-front {
-  /* transform: rotateY(180deg); */
+  transform: rotateY(0deg);
 }
 
 .card-back {

@@ -2,9 +2,8 @@ import { NavLink } from "react-router-dom";
 
 export default function Navbar() {
   const linkClass = ({ isActive }) =>
-    `transition-colors duration-200 ${
-      isActive ? "text-white" : "text-gray-400 hover:text-blue-600"
-    }`;
+  `p-[1rem] w-28 rounded-2xl transition-colors duration-200 hover:bg-slate-700
+   ${isActive ? "text-white" : "text-gray-400"}`;
 
   return (
     <nav className="w-full h-[6rem] px-8 flex items-center justify-between rounded-b-md 
@@ -16,7 +15,7 @@ export default function Navbar() {
       </NavLink>
 
       {/* RIGHT - NAV LINKS */}
-      <div className="flex items-center gap-8 text-lg font-[poppins-light]">
+      <div className="flex items-center text-center gap-3 text-lg font-[poppins-light]">
 
         <NavLink to="/" className={linkClass}>
           Home

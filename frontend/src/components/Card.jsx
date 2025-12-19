@@ -20,7 +20,7 @@ function Card({
         className={`card group flex flex-col h-[25rem] w-[20rem] bg-black relative rounded-3xl
             cursor-pointer
           transform-3d border-2 perspective-[1000px]
-          transition-transform duration-700
+          transition-transform 
            ${isFlipped ? "rotate-y-180" : "rotate-y-0"}`}
 
       >
@@ -61,7 +61,7 @@ function Card({
         </div>
 
         {/* BACK */}
-        <div className="card-back  absolute bg-[#C2410C] h-full w-full rounded-3xl p-2 backface-hidden "
+        <div className="card-back inset-0 absolute bg-[#C2410C] h-full w-full rounded-3xl p-2 backface-hidden "
             onClick={onFlip}
         >
             <div className='ml-2 text-[1.2rem] font-bold'>
