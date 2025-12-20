@@ -1,6 +1,8 @@
 import React, { useRef, useState } from "react";
+import {ID} from 'appwrite'
 
 function Card({
+  id = ID.unique(),
   title,
   rating,
   description,

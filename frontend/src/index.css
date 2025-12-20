@@ -40,6 +40,15 @@ body{
   transform: rotateY(180deg) translateZ(1px);
 }
 
+@keyframes appear-top {
+    from {
+        opacity: 0;
+        transform: translateY(4rem);
+    }
+    to {
+        opacity: 1; 
+    }
+}
 /* .card:hover {
   transform: scale(110%);
   transform: rotateY(180deg);
