@@ -1,96 +1,332 @@
+#!/usr/bin/env python3
+
 import os
 import sys
 import argparse
-from google import genai  # The new, supported library
-from dotenv import load_dotenv
+import time
+import json
+from typing import List, Optional, Dict, Any
 
-# Load environment variables
+from dotenv import load_dotenv
+from google import genai
+from supabase import create_client
+
+# =========================
+# ENV / CONFIG
+# =========================
 load_dotenv(".env.local")
 
-# Configuration
-# Use 'gemini-2.0-flash' if available, otherwise 'gemini-1.5-flash'
-MODEL_ID = "gemini-2.0-flash-exp"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+MODEL_ID = os.getenv("MODEL_ID", "gemini-2.5-flash")
 
-def build_prompt(ingredients: list[str], title: str = None) -> str:
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # service_role recommended for server use
+
+LOCK_KEY = "recipe_generation"
+
+if not GEMINI_API_KEY:
+    print("ERROR: GEMINI_API_KEY not set in .env.local", file=sys.stderr)
+    sys.exit(1)
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    print("ERROR: SUPABASE_URL and SUPABASE_KEY must be set in .env.local", file=sys.stderr)
+    sys.exit(1)
+
+# =========================
+# CLIENTS
+# =========================
+ai_client = genai.Client(api_key=GEMINI_API_KEY)
+sb = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# =========================
+# DB LOCK SYSTEM
+# =========================
+def acquire_lock(lock_key: str = LOCK_KEY, owner: Optional[str] = None, wait: int = 5) -> bool:
     """
-    Constructs the prompt. If title is None, asks AI to generate one.
+    Acquire a cross-process lock using a DB row insert.
+    Returns True if acquired, False otherwise.
     """
-    ingr_list = ", ".join(ingredients)
-    
-    if title:
-        title_instruction = f'Recipe title: "{title}"'
-    else:
-        title_instruction = 'Recipe title: Create a creative, appetizing title based on the ingredients.'
+    owner = owner or f"pid:{os.getpid()}"
+    deadline = time.time() + wait
+
+    while True:
+        try:
+            sb.table("locks").insert({
+                "key": lock_key,
+                "owner": owner
+            }).execute()
+            return True
+        except Exception:
+            # Likely duplicate key -> someone else holds lock
+            pass
+
+        if time.time() >= deadline:
+            return False
+
+        time.sleep(0.5)
+
+def release_lock(lock_key: str = LOCK_KEY):
+    """
+    Release the DB lock (best-effort)
+    """
+    try:
+        sb.table("locks").delete().eq("key", lock_key).execute()
+    except Exception:
+        pass
+
+# =========================
+# PROMPT BUILDER
+# =========================
+def build_json_prompt(ingredients: List[str], title: Optional[str] = None) -> str:
+    ingredient_text = ", ".join(ingredients)
+    title_text = title or ""
 
     return f"""
-    You are an expert chef. Write a detailed recipe.
-    
-    Ingredients provided: {ingr_list}
-    {title_instruction}
+You are an expert recipe writer.
 
-    Requirements:
-    1. **Title:** Put the title on the first line formatted as a Markdown Header (e.g., "# Title").
-    2. **Overview:** Short description with servings, prep time, and cook time.
-    3. **Ingredients:** List provided ingredients + common pantry items (oil, salt, etc).
-    4. **Equipment:** List required tools.
-    5. **Instructions:** Numbered, step-by-step cooking steps.
-    6. **Plain Text:** Do not output JSON.
-    """
+You must return EXACTLY ONE valid JSON object and NOTHING ELSE.
 
-def generate_recipe(ingredients: list[str], title: str = None):
-    """
-    Single function that handles both custom titles and AI-generated titles.
-    """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        print("Error: GEMINI_API_KEY not found in .env.local", file=sys.stderr)
-        sys.exit(1)
+SCHEMA:
+{{
+  "title": string,
+  "overview": {{
+    "description": string,
+    "servings": string,
+    "prep_time": string,
+    "cook_time": string
+  }},
+  "ingredients": [
+    {{
+      "quantity": string,
+      "unit": string,
+      "item": string,
+      "notes": string
+    }}
+  ],
+  "equipment": [string],
+  "instructions": [string],
+  "tags": [string]
+}}
 
-    # Initialize the new Client
-    client = genai.Client(api_key=api_key)
+RULES:
+- Output only valid JSON
+- Do NOT include markdown
+- Do NOT include commentary
+- Do NOT omit any keys
+- Instructions must be plain step strings, not numbered lists
+- If unsure, use empty strings instead of null
 
-    prompt = build_prompt(ingredients, title)
-    
-    print(f"Contacting Gemini ({MODEL_ID})...")
-    
+INPUTS:
+Ingredients: {ingredient_text}
+Optional Title: "{title_text}"
+
+Now generate the recipe JSON:
+""".strip()
+
+# =========================
+# GEMINI CALL
+# =========================
+def call_gemini(prompt: str) -> str:
     try:
-        # The new SDK syntax
-        response = client.models.generate_content(
+        resp = ai_client.models.generate_content(
             model=MODEL_ID,
             contents=prompt
         )
-        return response.text
     except Exception as e:
-        print(f"\nError calling Gemini: {e}", file=sys.stderr)
-        return None
+        raise RuntimeError(f"Gemini call failed: {e}")
 
+    # Try common response formats
+    text = getattr(resp, "text", None)
+
+    if not text and isinstance(resp, dict):
+        if "candidates" in resp and resp["candidates"]:
+            cand = resp["candidates"][0]
+            if isinstance(cand, dict):
+                text = cand.get("content") or cand.get("text")
+
+        if not text and "output" in resp:
+            out = resp["output"]
+            if isinstance(out, list) and out:
+                if isinstance(out[0], dict):
+                    text = out[0].get("content")
+
+    if not text:
+        text = str(resp)
+
+    return text
+
+# =========================
+# JSON EXTRACTION / PARSING
+# =========================
+def extract_first_json(text: str) -> str:
+    """
+    Extract the first full JSON object from a string using brace matching
+    """
+    start = text.find("{")
+    if start == -1:
+        raise ValueError("No JSON found in AI output")
+
+    stack = 0
+    for i in range(start, len(text)):
+        if text[i] == "{":
+            stack += 1
+        elif text[i] == "}":
+            stack -= 1
+            if stack == 0:
+                return text[start:i+1]
+
+    raise ValueError("Incomplete JSON in AI output")
+
+def normalize_recipe(parsed: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Enforce schema defaults and basic sanitation
+    """
+    defaults = {
+        "title": "Untitled Recipe",
+        "overview": {
+            "description": "",
+            "servings": "",
+            "prep_time": "",
+            "cook_time": ""
+        },
+        "ingredients": [],
+        "equipment": [],
+        "instructions": [],
+        "tags": []
+    }
+
+    for key, default_val in defaults.items():
+        if key not in parsed or parsed[key] is None:
+            parsed[key] = default_val
+
+    # Force ingredients into object format if model returned strings
+    normalized_ingredients = []
+    for ing in parsed["ingredients"]:
+        if isinstance(ing, str):
+            normalized_ingredients.append({
+                "quantity": "",
+                "unit": "",
+                "item": ing,
+                "notes": ""
+            })
+        elif isinstance(ing, dict):
+            normalized_ingredients.append({
+                "quantity": str(ing.get("quantity", "")),
+                "unit": str(ing.get("unit", "")),
+                "item": str(ing.get("item", "")),
+                "notes": str(ing.get("notes", ""))
+            })
+    parsed["ingredients"] = normalized_ingredients
+
+    # Ensure lists are lists
+    for list_key in ["equipment", "instructions", "tags"]:
+        if not isinstance(parsed[list_key], list):
+            parsed[list_key] = []
+
+    return parsed
+
+def generate_json_from_gemini(ingredients: List[str], title: Optional[str] = None) -> Dict[str, Any]:
+    prompt = build_json_prompt(ingredients, title)
+    raw_text = call_gemini(prompt)
+
+    json_str = extract_first_json(raw_text)
+    parsed = json.loads(json_str)
+    parsed = normalize_recipe(parsed)
+
+    parsed["_raw_text"] = raw_text
+    return parsed
+
+# =========================
+# DB SAVE
+# =========================
+def save_structured_recipe(recipe: Dict[str, Any]):
+    payload = {
+        "title": recipe["title"],
+        "overview": recipe["overview"],
+        "ingredients": recipe["ingredients"],
+        "equipment": recipe["equipment"],
+        "instructions": recipe["instructions"],
+        "raw_text": recipe.get("_raw_text", ""),
+        "tags": recipe["tags"],
+        "ai_generated": True,
+        "metadata": {
+            "provider": "gemini",
+            "model": MODEL_ID,
+            "timestamp": time.time()
+        }
+    }
+
+    return sb.table("recipes").insert(payload).execute()
+
+# =========================
+# PRIMARY FUNCTIONS
+# =========================
+def generate_and_store_auto(ingredients: List[str], wait: int = 5):
+    if not acquire_lock(wait=wait):
+        raise RuntimeError("Another recipe generation is already running")
+
+    try:
+        recipe = generate_json_from_gemini(ingredients, title=None)
+        db_res = save_structured_recipe(recipe)
+        return {
+            "status": "ok",
+            "title": recipe["title"],
+            "db_response": db_res
+        }
+    finally:
+        release_lock()
+
+def generate_and_store_with_title(ingredients: List[str], title: str, wait: int = 5):
+    if not acquire_lock(wait=wait):
+        raise RuntimeError("Another recipe generation is already running")
+
+    try:
+        recipe = generate_json_from_gemini(ingredients, title=title)
+        db_res = save_structured_recipe(recipe)
+        return {
+            "status": "ok",
+            "title": recipe["title"],
+            "db_response": db_res
+        }
+    finally:
+        release_lock()
+
+# =========================
+# CLI
+# =========================
 def main():
-    parser = argparse.ArgumentParser(description="Generate a recipe using Gemini.")
-    parser.add_argument("--ingredients", type=str, help="Comma-separated ingredients")
-    parser.add_argument("--title", type=str, help="Optional: Recipe Title. If omitted, AI generates one.")
-    
+    parser = argparse.ArgumentParser(
+        description="Generate structured recipes using Gemini and store them in Supabase"
+    )
+
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--auto", action="store_true", help="AI generates title and recipe")
+    mode.add_argument("--title", type=str, help="Use provided title and generate recipe")
+
+    parser.add_argument("--ingredients", type=str, required=True, help="Comma-separated ingredient list")
+    parser.add_argument("--wait", type=int, default=5, help="Seconds to wait for generation lock")
+
     args = parser.parse_args()
 
-    # 1. Get Ingredients
-    if args.ingredients:
-        raw_ing = args.ingredients
-    else:
-        # Fallback to interactive input if no flags provided
-        raw_ing = input("Ingredients (comma-separated): ").strip()
-    
-    ing_list = [i.strip() for i in raw_ing.split(",") if i.strip()]
-    if not ing_list:
-        print("Error: No ingredients provided.")
+    ingredients = [i.strip() for i in args.ingredients.split(",") if i.strip()]
+    if not ingredients:
+        print("ERROR: No valid ingredients provided", file=sys.stderr)
         sys.exit(1)
 
-    # 2. Generate Recipe (Logic handles title being None automatically)
-    recipe_text = generate_recipe(ing_list, title=args.title)
+    try:
+        if args.auto:
+            result = generate_and_store_auto(ingredients, wait=args.wait)
+        else:
+            result = generate_and_store_with_title(ingredients, args.title, wait=args.wait)
 
-    # 3. Print Result
-    if recipe_text:
-        print("\n" + "="*80 + "\n")
-        print(recipe_text)
-        print("\n" + "="*80 + "\n")
+        print("\n" + "=" * 60)
+        print("Recipe saved successfully")
+        print("Title:", result["title"])
+        print("=" * 60 + "\n")
 
-if __name__ == '__main__':
+    except Exception as e:
+        print("ERROR:", e, file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
     main()
