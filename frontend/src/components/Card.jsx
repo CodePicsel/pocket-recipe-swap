@@ -104,9 +104,40 @@ function Card({
             `}
           >
             {description}
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Architecto, delectus? Veritatis id enim temporibus fuga debitis aperiam quo quos atque, facere consequuntur ab non veniam est provident impedit architecto nulla.
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ipsa beatae sapiente reprehenderit explicabo. Quos iure soluta nulla magnam adipisci beatae incidunt cupiditate, illo in corrupti, earum sit modi ipsam fuga!
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Itaque esse porro quidem inventore! Veniam, ipsum vitae! Perspiciatis magnam placeat, quas facere sed voluptate iusto, dolores ratione laborum ipsum reprehenderit distinctio maiores vel consectetur et at voluptates corporis. Sequi expedita nulla quas sit quos eos numquam qui, ratione explicabo quam aperiam.
+            **Pantry Items (Optional, but highly recommended):**
+*   1 teaspoon olive oil or butter
+*   Salt, to taste
+*   Freshly ground black pepper, to taste
+
+---
+
+### Equipment
+
+*   Cutting board
+*   Sharp knife
+*   Small bowl
+*   Fork or whisk
+*   8-inch non-stick frying pan or skillet
+*   Spatula
+t texture in your finished dish.
+
+t texture in your finished dish.
+
+**2. Heat the Pan (1-2 minutes)**
+    *   Place your non-stick frying pan over medium heat. Add the olive oil or butter and swirl to coat the bottom of the pan.
+    *   *Cooking Tip:* Allow the pan to heat sufficiently before adding ingredients. A good test is to flick a tiny drop of water into the pan; if it sizzles and evaporates immediately, it's ready.
+
+**3. Sauté the Tomato (2-3 minutes)**
+    *   Add the diced tomato to the hot pan. Sauté gently, stirring occasionally, until the tomato softens slightly and releases some of its juices. You want them tender, not mushy.
+    *   *Cooking Tip:* Avoid overcrowding the pan with tomatoes, as this can steam them instead of allowing them to sear slightly and concentrate their flavor.        
+
+**4. Introduce the Egg (3-5 minutes)**
+    *   Pour the whisked eggs directly over the softened tomatoes in the pan. Gently spread the eggs to cover the tomatoes evenly. Allow the edges to set for about 30 seconds.
+    *   *Cooking Tip:* For a soft scramble, gently push the cooked egg from the edges towards the center with your spatula, tilting the pan to allow uncooked egg to flow underneath. For a more omelet-like texture, disturb the eggs less.
+
+**5. Melt the Cheese (1-2 minutes)**
+    *   Once the eggs are mostly set but still slightly moist on top, sprinkle the shredded cheese evenly over the surface.
+    *   Cover the pan with a lid (if you have one) or a plate for 1-2 minutes. The trapped steam will help the cheese melt perfectly and finish
           </p>
         </div>
       </div>

@@ -17,7 +17,7 @@ function Home() {
                 return(
                 <div key={index}> 
                 <Card 
-                  title='tour' rating={5}
+                  title='tour' rating={4}
                   isFlipped={ActiveCard === index}
                   onFlip={() =>
                   setActiveCard(ActiveCard === index ? null : index)}
