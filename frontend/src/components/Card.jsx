@@ -1,75 +1,98 @@
-import React, {useState} from 'react'
+// CardFlip.jsx
+import React, { useState } from "react";
 
-function Card({title, rating, description, featured_image, items=['item1', 'item2', 'item 3']}) {
+/*
+Requires Tailwind for layout classes.
+Add the small CSS below to a global CSS file or a module for the .card-3d classes.
+*/
 
-    // const [hover, setHover] = useState(false)
+function CardFlip({ title, rating = 4, description, featured_image, items = ["item1", "item2", "item3"] }) {
+  const [flipped, setFlipped] = useState(false);
 
+  // prefer-reduced-motion support
+  const prefersReducedMotion = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const transitionDuration = prefersReducedMotion ? "0.0s" : "0.6s";
+
+  // dynamic shadow to simulate light direction change on flip (tweak values)
+  const boxShadowFront = "0 18px 40px rgba(2,6,23,0.45)";
+  const boxShadowBack  = "0 -10px 30px rgba(2,6,23,0.28)"; // inverted-y offset for 'flipped' look
 
   return (
-    <div className='group'>
-    <div className={`card flex flex-col  h-[25rem] w-[20rem] bg-black relative rounded-3xl transform-3d border-2 perspective:1000px group-hover:rotate-y-180`} >
-            {/* <div className='absolute h-full w-full border-2 inset-0 from-white via-transparent to-transparent ' ></div> */}
-            <img className='h-full w-full object-cover rounded-3xl z-0 opacity-[85%]' src={"https://static.spotapps.co/website_images/ab_websites/174603_website_v1/menu.jpg"}/>
-        <div className={`card-front justify-center text-left align-middle border-t-2 absolute top-[15rem] p-1 w-full h-[10rem] rounded-b-3xl rounded-t-2xl rounded-t bg-[#C2410C] backface-hidden `}>
-            <div>
+     <div
+      className={`card-3d inline-block rounded-3xl ${flipped ? 'flip' : ''}`}
+      onMouseEnter={() => setFlipped(true)}
+      onMouseLeave={() => setFlipped(false)}
+      onFocus={() => setFlipped(true)}
+      onBlur={() => setFlipped(false)}
+      onClick={(e) => { setFlipped(prev => !prev); e.preventDefault(); }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={flipped}
+      style={{
+        width: 320,
+        height: 400,
+        cursor: "pointer",
+        transition: `box-shadow ${transitionDuration} cubic-bezier(.2,.9,.2,1)`
+      }}
+    >
+      <div
+        className="card relative w-full h-full rounded-3xl ${flipped ? 'flipped' : ''}"
+        style={{
+          transformStyle: "preserve-3d",
+          transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+          transition: `transform ${transitionDuration} cubic-bezier(.2,.9,.2,1)`,
+          willChange: "transform",
+        }}
+      >
+        {/* FRONT FACE */}
+        <div
+          className="card-face card-front absolute inset-0 rounded-3xl overflow-hidden z-10"
+          style={{
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        >
+          <img
+            src={featured_image || "https://static.spotapps.co/website_images/ab_websites/174603_website_v1/menu.jpg"}
+            alt={title}
+            className="w-full h-full object-cover opacity-95"
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-[#C2410C] p-3 rounded-b-3xl">
+            <div className="text-amber-300 text-xl">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className={i + 1 <= rating ? "text-amber-300" : "text-gray-300"}>&#9733;</span>
+              ))}
+            </div>
+            <h2 className="text-2xl font-extrabold mt-1 line-clamp-2">{title?.toUpperCase()}</h2>
+            <ul className="flex gap-1 mt-2 text-sm text-orange-100">
+              {items.slice(0, 3).map((it, idx) => <li key={idx} className="capitalize">{it}{idx < 2 ? " | " : ""}</li>)}
+            </ul>
+          </div>
+        </div>
 
-                {/* RATING DISPLAY */}
-                <div className='ml-2 text-3xl'>
-                   {
-                       [...Array(5)].map((_, index) => {
-                           return (
-                               <span
-                               className={index+1 <= rating ? 'text-amber-300': null}
-                               >&#9733;</span>
-                            )
-                        })
-                    }
-                </div>
-                    <h1 is='' className='text-[2rem]  ml-3 font-extrabold line-clamp-3 overflow-hidden text-ellipsis whitespace-nowrap  '>{title.toUpperCase()}</h1>
-                <div>
-                    <ul className='flex gap-1 ml-0.5 justify-around text-orange-100 line-clamp-2 text-[sm] relative capitalize '>
-                        <li>{items[0]}</li>
-                        <li>|</li>
-                        <li>{items[1]}</li>
-                        <li>|</li>
-                        <li>{items[2]}</li>
-                    </ul>
-                </div>
-            </div>
+        {/* BACK FACE */}
+        <div
+          className="card-face card-back absolute inset-0 rounded-3xl p-4"
+          style={{
+            transform: "rotateY(180deg)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+            background: "#C2410C",
+            boxSizing: "border-box",
+          }}
+        >
+          <div className="text-white font-bold">Ingredients:</div>
+          <ul className="text-sm mt-1 mb-3">
+            {items.map((it, idx) => <li key={idx} className="capitalize">• {it}</li>)}
+          </ul>
+          <div className="text-white font-bold mt-2">Recipe:</div>
+          <div className="mt-1 text-sm max-h-[60%] overflow-y-auto pr-2">
+            <p>{description}</p>
+          </div>
         </div>
-        <div className={`card-back absolute bg-[#C2410C] h-full w-full rounded-3xl p-1 backface-hidden group-hover:rotate-y-180`}>
-            <div className='ml-2 text-[1.2rem] font-bold'>
-                Ingredients :
-                <ul className='flex gap-1 text-left  line-clamp-2 text-[1rem] relative capitalize'>
-                        <li>{items[0]}</li>
-                        <li>|</li>
-                        <li>{items[1]}</li>
-                        <li>|</li>
-                        <li>{items[2]}</li>
-                    </ul>
-            </div>
-            {/* <div>______________________________________________</div> */}
-            <div className='ml-2 text-3xl mt-2'>
-                <p className='font-bold mb-1'>Recipe :</p>
-                <p className='max-h-[18rem] text-[1rem] p-2 m-0.5 overflow-y-scroll 
-                    [&::-webkit-scrollbar]:w-1
-                    [&::-webkit-scrollbar-track]:rounded-md
-                    [&::-webkit-scrollbar-thumb]:rounded-md
-                    dark:[&::-webkit-scrollbar-track]:bg-amber-800
-                    dark:[&::-webkit-scrollbar-thumb]:bg-white
-                    '>
-                    {description}
-                    Lorem 
-                    ipsum dolor sit amet consectetur
-                     adipisicing elit. Molestiae maxime, necessitatibus eaque molestias illo blanditiis temporibus fuga minima, alias inventore cupiditate nisi ducimus consectetur! Porro velit saepe laboriosam veniam molestiae?
-                     Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequuntur illo voluptate, suscipit neque nesciunt debitis reprehenderit, quis velit molestiae optio enim sed ut repudiandae voluptas cumque sint aperiam eos earum?
-                     Lorem ipsum dolor sit amet consectetur, adipisicing elit. A expedita maxime similique laboriosam cupiditate aliquid inventore quis, deleniti odit voluptas debitis minima magnam amet! Corrupti modi consectetur itaque consequuntur. Magni!
-                </p>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
-  )
+  );
 }
 
-export default Card
+export default CardFlip;

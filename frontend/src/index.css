@@ -15,44 +15,89 @@
   src: url('./assets/Poppins-Light.ttf');
 }
 
-:root{
-  /* background-color: #FFF7ED; */
-  color: white;
-}
-body{
-    background-color: #FFF7ED;
-    /* background: #082f45; */
-    /* background: linear-gradient(0deg, rgba(8, 47, 69, 1) 0%, rgba(224, 255, 255, 1) 100%); */
-    background-repeat: no-repeat;
-    background-size: cover;
+:root {
+  --page-bg: #FFF7ED; /* use the same bg as body */
+  --card-radius: 1rem; /* 16px */
 }
 
+/* FRAME: non-rotating, contains shadow + page-fill */
+.card-3d {
+  width: 20rem;
+  height: 25rem;
+  position: relative;
+  border-radius: var(--card-radius);
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
+  overflow: visible;             /* allow shadow to bleed outside while clipping faces with ::before */
+  /* remove box-shadow here - we'll draw shadow with ::after for consistent layering */
+}
+
+/* Page-fill pseudo element (keeps background consistent behind rotating card) */
+.card-3d::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--page-bg);    /* same as page background so no odd contrast during flip */
+  z-index: 0;                    /* behind the rotating card */
+  pointer-events: none;
+}
+
+/* Shadow pseudo-element placed *below* the rotating card but above the page-fill */
+.card-3d::after {
+  content: "";
+  position: absolute;
+  left: 6px;                      /* tweak to control shadow spread */
+  right: 6px;
+  top: 12px;
+  bottom: 6px;
+  border-radius: calc(var(--card-radius) - 2px);
+  z-index: 0;                     /* keep behind rotating card (.card z-index:2) */
+  pointer-events: none;
+  /* heavy, soft shadow rendered via box-shadow + blur - easier to animate if needed */
+  box-shadow: 0 18px 40px rgba(2,6,23,0.25);
+  filter: blur(6px);              /* softens and hides any aliasing */
+  transform: translateZ(0);       /* keep it in its own layer */
+}
+
+/* the rotating object (preserve-3d) */
 .card {
-  box-shadow: rgb(127, 127, 127) 5px 5px 5px;
-  /* transition: 500ms; */
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 2;                     /* ensure it stays above ::before/::after */
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(.2,.9,.2,1);
+  will-change: transform;
+  transform-origin: center center;
+  /* small nudge to avoid hairline seam in some browsers (optional) */
+  /* transform: translateZ(0.5px); */
 }
 
-.card-front {
-  /* transform: rotateY(180deg); */
+/* faces */
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
 }
 
-.card-back {
-  transform: rotateY(180deg) translateZ(1px);
-}
+/* default face ordering */
+.card-front { transform: rotateY(0deg); }
+.card-back  { transform: rotateY(180deg); }
 
-.card:hover {
-  transform: scale(110%);
+/* rotated state (hover or .flip) */
+.card-3d:hover .card,
+.card-3d.flip .card {
   transform: rotateY(180deg);
-  transition: 800ms;
-  transition-delay: 200ms;
 }
 
-/* for Typewriter */
-@keyframes fast-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-
-.animate-fast-blink {
-  animation: fast-blink 0.5s steps(1) infinite;
+/* optional: change the shadow when flipped (toggle .flip on wrapper for JS control) */
+.card-3d.flipped::after,
+.card-3d.flip::after {
+  box-shadow: 0 -10px 30px rgba(2,6,23,0.25);
+  transform: translateY(-6px);
 }
