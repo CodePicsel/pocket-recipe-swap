@@ -101,3 +101,30 @@
   box-shadow: 0 -10px 30px rgba(2,6,23,0.25);
   transform: translateY(-6px);
 }
+
+/* overlay and small utility styles for modal animation */
+.card-popup-overlay {
+  transition: opacity 300ms ease, backdrop-filter 300ms ease;
+  will-change: opacity, backdrop-filter;
+}
+
+/* clone styles placeholder (most inline) */
+.card-clone {
+  will-change: transform, left, top, width, height;
+  border-radius: 12px;
+}
+
+/* root portal container (optional) */
+.card-modal-root {
+  position: relative;
+  z-index: 10000;
+}
+
+/* small responsive */
+@media (max-width: 640px) {
+  .card-modal-root .card-modal {
+    width: 95vw !important;
+    height: 85vh !important;
+    flex-direction: column !important;
+  }
+}
