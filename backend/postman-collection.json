@@ -1,0 +1,166 @@
+{
+  "info": {
+    "name": "Recipe Generator API",
+    "description": "Postman collection for testing the FastAPI Recipe Generator (Gemini + Supabase). Set {{baseUrl}} to your server (default http://localhost:8000).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Generate - auto (AI creates title + recipe)",
+      "id": "req-generate-auto-001",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ingredients\": [\"potato\", \"besan\", \"pav\", \"coriander\", \"green chili\", \"ginger\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/generate-auto",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "generate-auto"
+          ]
+        },
+        "description": "AI generates title + structured recipe from ingredients and stores it in Supabase."
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 201 Created or 200 OK\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([201, 200]);",
+              "});",
+              "",
+              "pm.test(\"Response is JSON\", function () {",
+              "    pm.response.to.be.json;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Generate - with title (use provided title)",
+      "id": "req-generate-with-title-002",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Crispy Besan-Coated Aloo Pav Sandwiches\",\n  \"ingredients\": [\"potato\", \"besan\", \"pav\", \"coriander\", \"green chili\", \"ginger\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/generate-with-title",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "generate-with-title"
+          ]
+        },
+        "description": "AI generates structured recipe using the provided title and stores it in Supabase."
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 201 Created or 200 OK\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([201, 200]);",
+              "});",
+              "",
+              "pm.test(\"Response is JSON\", function () {",
+              "    pm.response.to.be.json;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fetch latest recipes",
+      "id": "req-get-recipes-003",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/recipes?limit=5",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "recipes"
+          ],
+          "query": [
+            {
+              "key": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "Fetch the most recent recipes. Adjust the 'limit' query param as needed."
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response is JSON array\", function () {",
+              "    pm.response.to.be.json;",
+              "    var body = pm.response.json();",
+              "    pm.expect(Array.isArray(body)).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}
