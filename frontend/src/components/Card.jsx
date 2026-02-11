@@ -97,7 +97,7 @@ export default function CardFlipWithModalFLIPFixed({
         ...prev,
         transform: transformValue,
         borderRadius: "12px",
-        boxShadow: "0 40px 110px rgba(2,6,23,0.30)",
+        boxShadow: "0 40px 110px rgba(2,6,23,0.70)",
       }));
     });
 
@@ -148,7 +148,7 @@ export default function CardFlipWithModalFLIPFixed({
         ? "none"
         : "transform 460ms cubic-bezier(.2,.9,.2,1), border-radius 360ms cubic-bezier(.2,.9,.2,1), box-shadow 360ms cubic-bezier(.2,.9,.2,1)",
       transformOrigin: "center center",
-      boxShadow: "0 40px 110px rgba(2,6,23,0.30)",
+      boxShadow: "0 40px 110px rgba(2,6,23,0.70)",
       willChange: "transform",
       transform: startTransform, // visually placed at modal
     };
