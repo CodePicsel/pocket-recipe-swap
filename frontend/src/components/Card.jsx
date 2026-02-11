@@ -1,5 +1,5 @@
 // CardFlipWithModalFLIPFixed.jsx
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import ReactDOM from "react-dom";
 
 function ModalPortal({ children }) {
@@ -8,7 +8,7 @@ function ModalPortal({ children }) {
     elRef.current = document.createElement("div");
     elRef.current.className = "card-modal-root";
   }
-  useEffect(() => {
+  React.useEffect(() => {
     document.body.appendChild(elRef.current);
     return () => document.body.removeChild(elRef.current);
   }, []);
@@ -23,19 +23,21 @@ export default function CardFlipWithModalFLIPFixed({
   items = ["item1", "item2", "item3"],
 }) {
   const cardRef = useRef(null);
-  const cloneRef = useRef(null);
 
   const [flipped, setFlipped] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(false);
-  const [showModalContent, setShowModalContent] = useState(false);
-  const [cloneStyle, setCloneStyle] = useState(null);
 
+  // modalRect state drives the single modal element (null = not mounted)
+  const [modalRect, setModalRect] = useState(null);
+  const [modalContentVisible, setModalContentVisible] = useState(false); // controls opacity of modal inner content
   const prefersReducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  // compute centered modal rectangle
+  const ANIM_MS = 420; // duration for geometry changes
+  const CONTENT_FADE_MS = 220;
+
   function computeTargetRect() {
     const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
     const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
@@ -46,139 +48,103 @@ export default function CardFlipWithModalFLIPFixed({
     return { left, top, width: targetW, height: targetH };
   }
 
-  // compute transform from src -> target
-  function computeTransformFor(src, target) {
-    const srcCx = src.left + src.width / 2;
-    const srcCy = src.top + src.height / 2;
-    const tgtCx = target.left + target.width / 2;
-    const tgtCy = target.top + target.height / 2;
-    const dx = tgtCx - srcCx;
-    const dy = tgtCy - srcCy;
-    const sx = target.width / src.width;
-    const sy = target.height / src.height;
-    return { translate: `translate(${dx}px, ${dy}px)`, scale: `scale(${sx}, ${sy})`, sx, sy, dx, dy };
-  }
-
-  // OPEN: clone placed at card rect (left/top=src), transform NONE -> animate to transform (src->target)
+  // open: mount modalRect at card's geometry -> transition to target geometry (using left/top/width/height)
   function openPopup() {
     if (!cardRef.current) return;
-    const srcRect = cardRef.current.getBoundingClientRect();
+    const src = cardRef.current.getBoundingClientRect();
     const target = computeTargetRect();
 
+    // start with modal element mounted at card rect (no transform/scale)
     const initial = {
-      position: "fixed",
-      left: `${srcRect.left}px`,
-      top: `${srcRect.top}px`,
-      width: `${srcRect.width}px`,
-      height: `${srcRect.height}px`,
+      left: `${src.left}px`,
+      top: `${src.top}px`,
+      width: `${src.width}px`,
+      height: `${src.height}px`,
       borderRadius: window.getComputedStyle(cardRef.current).borderRadius || "12px",
-      overflow: "hidden",
-      zIndex: 9999,
-      background: "#fff",
-      transition: prefersReducedMotion
-        ? "none"
-        : "transform 460ms cubic-bezier(.2,.9,.2,1), border-radius 360ms cubic-bezier(.2,.9,.2,1), box-shadow 360ms cubic-bezier(.2,.9,.2,1)",
-      transformOrigin: "center center",
       boxShadow: "0 18px 40px rgba(2,6,23,0.25)",
-      willChange: "transform",
-      transform: "none", // start at identity
     };
 
-    setCloneStyle(initial);
+    setModalRect(initial);
     setOverlayVisible(true);
+    setModalContentVisible(false); // hide content while geom animates
 
-    // compute transform (src -> target)
-    const tm = computeTransformFor(srcRect, target);
-    const transformValue = `${tm.translate} ${tm.scale}`;
-
-    // animate (transform only)
-    requestAnimationFrame(() => {
-      setCloneStyle((prev) => ({
-        ...prev,
-        transform: transformValue,
+    if (prefersReducedMotion) {
+      // no animation: mount final modal instantly
+      const final = {
+        left: `${target.left}px`,
+        top: `${target.top}px`,
+        width: `${target.width}px`,
+        height: `${target.height}px`,
         borderRadius: "12px",
         boxShadow: "0 40px 110px rgba(2,6,23,0.70)",
-      }));
-    });
-
-    // show modal content after animation
-    if (prefersReducedMotion) {
-      setShowModalContent(true);
-      setCloneStyle(null);
-    } else {
-      // wait for transition end: use timeout slightly above duration
-      setTimeout(() => {
-        setShowModalContent(true);
-        setCloneStyle(null);
-      }, 500);
+      };
+      setModalRect(final);
+      setTimeout(() => setModalContentVisible(true), 10);
+      return;
     }
+
+    // small frame then start geometry transition
+    requestAnimationFrame(() => {
+      // apply CSS transition tuning in style rendering below; update geometry
+      const final = {
+        left: `${target.left}px`,
+        top: `${target.top}px`,
+        width: `${target.width}px`,
+        height: `${target.height}px`,
+        borderRadius: "12px",
+        boxShadow: "0 40px 110px rgba(2,6,23,0.70)",
+      };
+      setModalRect(final);
+
+      // reveal content halfway through the geometry animation for smoother appearance
+      const contentDelay = Math.max(80, Math.round(ANIM_MS * 0.5));
+      setTimeout(() => setModalContentVisible(true), contentDelay + 8);
+    });
   }
 
-  // CLOSE: create clone positioned at srcRect (left/top=src) with transform = src->target (so visually it's at modal),
-  // then animate transform to NONE -> clone animates back to card. This avoids jumps.
+  // close: hide content -> animate geometry back to card rect -> unmount
   function closePopup() {
     if (!cardRef.current) {
-      // fallback: just hide
-      setShowModalContent(false);
+      setModalContentVisible(false);
+      setOverlayVisible(false);
+      setFlipped(false);
+      setModalRect(null);
+      return;
+    }
+
+    if (prefersReducedMotion) {
+      setModalContentVisible(false);
+      setModalRect(null);
       setOverlayVisible(false);
       setFlipped(false);
       return;
     }
 
-    const srcRect = cardRef.current.getBoundingClientRect();
-    const target = computeTargetRect();
-    const tm = computeTransformFor(srcRect, target);
-    const startTransform = `${tm.translate} ${tm.scale}`;
+    // fade out content immediately
+    setModalContentVisible(false);
 
-    // remove modal content first (so only clone is visible)
-    setShowModalContent(false);
-
-    // set clone positioned at srcRect but transformed so it visually is at modal (start of reverse anim)
-    const start = {
-      position: "fixed",
-      left: `${srcRect.left}px`,   // crucial: keep left/top as srcRect
-      top: `${srcRect.top}px`,
-      width: `${srcRect.width}px`,
-      height: `${srcRect.height}px`,
-      borderRadius: "12px",
-      overflow: "hidden",
-      zIndex: 9999,
-      background: "#fff",
-      transition: prefersReducedMotion
-        ? "none"
-        : "transform 460ms cubic-bezier(.2,.9,.2,1), border-radius 360ms cubic-bezier(.2,.9,.2,1), box-shadow 360ms cubic-bezier(.2,.9,.2,1)",
-      transformOrigin: "center center",
-      boxShadow: "0 40px 110px rgba(2,6,23,0.70)",
-      willChange: "transform",
-      transform: startTransform, // visually placed at modal
+    // compute srcRect (card) and then set modalRect to card geometry to animate back
+    const src = cardRef.current.getBoundingClientRect();
+    const target = {
+      left: `${src.left}px`,
+      top: `${src.top}px`,
+      width: `${src.width}px`,
+      height: `${src.height}px`,
+      borderRadius: window.getComputedStyle(cardRef.current).borderRadius || "12px",
+      boxShadow: "0 18px 40px rgba(2,6,23,0.25)",
     };
 
-    // show clone and overlay (overlay remains)
-    setCloneStyle(start);
-    setOverlayVisible(true);
-
-    // next frame: animate transform to none -> moves clone back to srcRect visual
-    requestAnimationFrame(() => {
-      setCloneStyle((prev) => ({
-        ...prev,
-        transform: "none", // animate back to identity
-        borderRadius: window.getComputedStyle(cardRef.current).borderRadius || "12px",
-        boxShadow: "0 18px 40px rgba(2,6,23,0.25)",
-      }));
-    });
-
-    // after animation completes: remove clone, overlay, reset flip
-    if (prefersReducedMotion) {
-      setCloneStyle(null);
-      setOverlayVisible(false);
-      setFlipped(false);
-    } else {
+    // small delay to allow content fade to run
+    const fadeDelay = 60;
+    setTimeout(() => {
+      setModalRect(target);
+      // cleanup after animation
       setTimeout(() => {
-        setCloneStyle(null);
+        setModalRect(null);
         setOverlayVisible(false);
         setFlipped(false);
-      }, 500);
-    }
+      }, ANIM_MS + 16);
+    }, fadeDelay);
   }
 
   // click handler
@@ -270,6 +236,28 @@ export default function CardFlipWithModalFLIPFixed({
     </div>
   );
 
+  // style helpers for modal rect -> convert modalRect to inline styles with transitions
+  const modalInlineStyle = modalRect
+    ? {
+        position: "fixed",
+        left: modalRect.left,
+        top: modalRect.top,
+        width: modalRect.width,
+        height: modalRect.height,
+        borderRadius: modalRect.borderRadius || "12px",
+        overflow: "hidden",
+        background: "#fff",
+        boxShadow: modalRect.boxShadow || "0 18px 40px rgba(2,6,23,0.25)",
+        zIndex: 9999,
+        // animate numeric geometry properties (not scale)
+        transition: prefersReducedMotion
+          ? "none"
+          : `left ${ANIM_MS}ms cubic-bezier(.2,.9,.2,1), top ${ANIM_MS}ms cubic-bezier(.2,.9,.2,1), width ${ANIM_MS}ms cubic-bezier(.2,.9,.2,1), height ${ANIM_MS}ms cubic-bezier(.2,.9,.2,1), border-radius ${Math.round(ANIM_MS * 0.8)}ms cubic-bezier(.2,.9,.2,1), box-shadow ${Math.round(ANIM_MS * 0.8)}ms cubic-bezier(.2,.9,.2,1)`,
+        willChange: "left, top, width, height",
+        pointerEvents: modalContentVisible ? "auto" : "none",
+      }
+    : null;
+
   return (
     <>
       {cardInner}
@@ -279,7 +267,7 @@ export default function CardFlipWithModalFLIPFixed({
           {/* overlay */}
           <div
             onMouseDown={() => {
-              if (showModalContent) closePopup();
+              if (modalContentVisible) closePopup();
             }}
             style={{
               position: "fixed",
@@ -287,92 +275,62 @@ export default function CardFlipWithModalFLIPFixed({
               zIndex: 9988,
               background: "rgba(6,6,6,0.28)",
               backdropFilter: "blur(6px) saturate(110%)",
-              transition: "opacity 260ms ease",
-              opacity: showModalContent ? 1 : 0.98,
+              transition: "opacity 220ms ease",
+              opacity: modalContentVisible ? 1 : 0.98,
             }}
           />
 
-          {/* clone (positioned at srcRect always; transform applied to move it to modal) */}
-          {cloneStyle && (
-            <div
-              ref={cloneRef}
-              style={{
-                ...cloneStyle,
-              }}
-            >
-              {/* back content inside clone (user clicked when flipped) */}
-              <div style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", inset: 0, background: "#C2410C", padding: 20, color: "white" }}>
-                  <div style={{ fontWeight: 700 }}>Ingredients:</div>
-                  <ul>
-                    {items.map((it, idx) => (
-                      <li key={idx} style={{ textTransform: "capitalize" }}>
-                        • {it}
-                      </li>
-                    ))}
-                  </ul>
-                  <div style={{ fontWeight: 700, marginTop: 12 }}>Recipe:</div>
-                  <div style={{ marginTop: 6 }}>{description}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* modal content shown after open animation */}
-          {showModalContent && (
-            <div
-              role="dialog"
-              aria-modal="true"
-              style={{
-                position: "fixed",
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                width: "min(90vw, 900px)",
-                height: "min(85vh, 800px)",
-                zIndex: 9999,
-                borderRadius: 12,
-                overflow: "hidden",
-                boxShadow: "0 40px 120px rgba(2,6,23,0.35)",
-                background: "#fff",
-                display: "flex",
-                flexDirection: "row",
-              }}
-            >
-              <div style={{ width: "45%", minWidth: 260, height: "100%", overflow: "hidden" }}>
-                <img
-                  src={featured_image || "https://static.spotapps.co/website_images/ab_websites/174603_website_v1/menu.jpg"}
-                  alt={title}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-              </div>
-
-              <div style={{ padding: 24, flex: 1, overflowY: "auto" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <h2 style={{ margin: 0 }}>{title}</h2>
-                  <button
-                    onClick={closePopup}
-                    style={{ border: "none", background: "transparent", fontSize: 20, cursor: "pointer" }}
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
+          {/* single modal element (mounted while modalRect != null) */}
+          {modalRect && (
+            <div style={modalInlineStyle}>
+              {/* inner content: keep layout identical to previous centered modal,
+                  but control opacity for a smooth reveal */}
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "row",
+                  opacity: modalContentVisible ? 1 : 0,
+                  transition: `opacity ${CONTENT_FADE_MS}ms ease`,
+                }}
+              >
+                <div style={{ width: "45%", minWidth: 260, height: "100%", overflow: "hidden" }}>
+                  <img
+                    src={featured_image || "https://static.spotapps.co/website_images/ab_websites/174603_website_v1/menu.jpg"}
+                    alt={title}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
                 </div>
 
-                <div style={{ marginTop: 12 }}>
-                  <strong>Ingredients</strong>
-                  <ul>
-                    {items.map((it, idx) => (
-                      <li key={idx} style={{ textTransform: "capitalize" }}>
-                        {it}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <div style={{ padding: 24, flex: 1, overflowY: "auto" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <h2 style={{ margin: 0 }}>{title}</h2>
+                    <button
+                      onClick={closePopup}
+                      style={{ border: "none", background: "transparent", fontSize: 20, cursor: "pointer" }}
+                      aria-label="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-                <div style={{ marginTop: 12 }}>
-                  <strong>Recipe</strong>
-                  <div style={{ marginTop: 6 }}>{description}</div>
+                  <div style={{ marginTop: 12 }}>
+                    <strong>Ingredients</strong>
+                    <ul>
+                      {items.map((it, idx) => (
+                        <li key={idx} style={{ textTransform: "capitalize" }}>
+                          {it}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div style={{ marginTop: 12 }}>
+                    <strong>Recipe</strong>
+                    <div style={{ marginTop: 6 }}>{description}</div>
+                  </div>
                 </div>
               </div>
             </div>
