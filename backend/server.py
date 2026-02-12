@@ -363,6 +363,30 @@ def endpoint_generate_auto(payload: IngredientsIn):
         return out
     finally:
         release_lock()
+@app.get("/recipes/meta")
+def endpoint_recipes_meta():
+    """
+    Lightweight metadata for cache validation:
+    - count: total rows in recipes (approx)
+    - latest: most recent created_at (ISO string) or None
+    """
+    try:
+        # get latest created_at (most recent row)
+        latest_res = sb.table("recipes").select("created_at").order("created_at", desc=True).limit(1).execute()
+        latest_rows = normalize_sb_response(latest_res)
+        latest = None
+        if latest_rows and isinstance(latest_rows[0], dict):
+            latest = latest_rows[0].get("created_at")
+
+        # naive count: if your supabase client supports exact count prefer using that.
+        count_res = sb.table("recipes").select("id").execute()
+        count_rows = normalize_sb_response(count_res)
+        count = len(count_rows)
+
+        return {"count": count, "latest": latest}
+    except Exception as ex:
+        print("ERROR fetching recipes meta:", ex)
+        raise HTTPException(status_code=500, detail="Failed to read metadata")
 
 @app.post("/generate-with-title", response_model=RecipeOut, status_code=status.HTTP_201_CREATED)
 def endpoint_generate_with_title(payload: TitleAndIngredientsIn):
