@@ -67,7 +67,7 @@ export default function Home() {
       return JSON.stringify(ing).slice(0, 18);
     });
   }
-  
+
 // helper: fetch meta from backend
 async function fetchRecipesMeta() {
   const url = `${API_BASE || "http://localhost:8000"}/recipes/meta`;
@@ -244,10 +244,13 @@ async function fetchRecipes(limitParam = 12, { force = false } = {}) {
   }
 
   return (
-    <div className="px-6 py-6">
-      <div className="flex justify-center mb-6">
-        <Typewriter />
-      </div>
+   <div
+    className="px-6 py-6"
+    style={{ paddingTop: "var(--header-h, 72px)" }} // fallback 72px
+  >
+    <div className="flex justify-center mb-6">
+      <Typewriter />
+    </div>
 
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm text-gray-600">{loading ? "Loading…" : `${recipes.length} shown`}</div>
